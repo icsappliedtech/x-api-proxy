@@ -1,19 +1,21 @@
 let cachedData = null;
 let lastFetch = 0;
-const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
 
 module.exports = async (req, res) => {
   const fetch = require('node-fetch');
   const now = Date.now();
+  const query = req.query.q || 'edtech'; // Default to 'edtech' if no query
 
-  // Serve cached data if available and not expired
-  if (cachedData && (now - lastFetch < CACHE_DURATION)) {
+  // Cache key includes query to differentiate results
+  const cacheKey = `tweets-${query}`;
+  if (cachedData && cachedData.key === cacheKey && (now - lastFetch < CACHE_DURATION)) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    return res.status(200).json(cachedData);
+    return res.status(200).json(cachedData.data);
   }
 
   try {
-    const response = await fetch('https://api.twitter.com/2/tweets/search/recent?query=techeducation&tweet.fields=text', {
+    const response = await fetch(`https://api.twitter.com/2/tweets/search/recent?query=${encodeURIComponent(query)}&tweet.fields=text`, {
       headers: { 'Authorization': `Bearer ${process.env.X_BEARER_TOKEN}` }
     });
     const data = await response.json();
@@ -22,8 +24,8 @@ module.exports = async (req, res) => {
       throw new Error(`X API error: ${response.status} - ${data.title || 'Unknown'}`);
     }
 
-    // Cache the successful response
-    cachedData = data;
+    // Cache the response with query-specific key
+    cachedData = { key: cacheKey, data: data };
     lastFetch = now;
 
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -31,9 +33,8 @@ module.exports = async (req, res) => {
   } catch (error) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     if (error.message.includes('429')) {
-      // Fallback to cached data if rate-limited and cache exists
-      if (cachedData) {
-        return res.status(200).json(cachedData);
+      if (cachedData && cachedData.key === cacheKey) {
+        return res.status(200).json(cachedData.data);
       }
       return res.status(429).json({ error: 'Rate limit exceeded', details: error.message });
     }
