@@ -1,21 +1,25 @@
 let cachedData = null;
 let lastFetch = 0;
 const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
+const MY_USER_ID = '104529710'; // Replace with your actual ID, e.g., '123456789'
 
 module.exports = async (req, res) => {
   const fetch = require('node-fetch');
   const now = Date.now();
-  const query = req.query.q || 'edtech'; // Default to 'edtech' if no query
+  const query = req.query.q;
+  const cacheKey = query ? `search-${query}` : `user-${MY_USER_ID}`;
 
-  // Cache key includes query to differentiate results
-  const cacheKey = `tweets-${query}`;
   if (cachedData && cachedData.key === cacheKey && (now - lastFetch < CACHE_DURATION)) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(200).json(cachedData.data);
   }
 
   try {
-    const response = await fetch(`https://api.twitter.com/2/tweets/search/recent?query=${encodeURIComponent(query)}&tweet.fields=text`, {
+    let url = query
+      ? `https://api.twitter.com/2/tweets/search/recent?query=${encodeURIComponent(query)}&tweet.fields=text`
+      : `https://api.twitter.com/2/users/${MY_USER_ID}/tweets?tweet.fields=text`;
+    
+    const response = await fetch(url, {
       headers: { 'Authorization': `Bearer ${process.env.X_BEARER_TOKEN}` }
     });
     const data = await response.json();
@@ -24,7 +28,6 @@ module.exports = async (req, res) => {
       throw new Error(`X API error: ${response.status} - ${data.title || 'Unknown'}`);
     }
 
-    // Cache the response with query-specific key
     cachedData = { key: cacheKey, data: data };
     lastFetch = now;
 
