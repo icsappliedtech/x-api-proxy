@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
   try {
     let url = query
       ? `https://api.twitter.com/2/tweets/search/recent?query=${encodeURIComponent(query)}&tweet.fields=text`
-      : `https://api.twitter.com/2/users/${MY_USER_ID}/tweets?tweet.fields=text`;
+      : `https://api.twitter.com/2/users/${MY_USER_ID}/tweets?tweet.fields=text&max_results=10`;
     
     const response = await fetch(url, {
       headers: { 'Authorization': `Bearer ${process.env.X_BEARER_TOKEN}` }
