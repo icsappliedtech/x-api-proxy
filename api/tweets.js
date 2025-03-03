@@ -1,5 +1,3 @@
-javascript
-
 module.exports = async (req, res) => {
   const fetch = require('node-fetch');
   try {
@@ -12,4 +10,3 @@ module.exports = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch tweets', details: error.message });
   }
 };
-
