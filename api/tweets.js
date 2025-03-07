@@ -1,7 +1,8 @@
 let cachedData = null;
 let lastFetch = 0;
-const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
-const MY_USER_ID = '104529710'; // Replace with your actual ID, e.g., '123456789'
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+const MY_USER_ID = 'YOUR_USER_ID'; // Your actual ID
+const staticTweets = require('./staticTweets.json'); // Add this file to project root
 
 module.exports = async (req, res) => {
   const fetch = require('node-fetch');
@@ -39,7 +40,7 @@ module.exports = async (req, res) => {
       if (cachedData && cachedData.key === cacheKey) {
         return res.status(200).json(cachedData.data);
       }
-      return res.status(429).json({ error: 'Rate limit exceeded', details: error.message });
+      return res.status(200).json(staticTweets); // Fallback to static data
     }
     res.status(500).json({ error: 'Failed to fetch tweets', details: error.message });
   }
